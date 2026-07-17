@@ -1,0 +1,54 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper to check if a user is updating their own document
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // 1. Users collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      // Allow user creation and self-updates
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+    }
+    
+    // 2. Rooms collection
+    match /rooms/{roomId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.hostId == request.auth.uid;
+      
+      allow update: if isAuthenticated() && (
+        // Case A: A guest is joining the room.
+        // The room must not have a guest already, and the guestId being written must match the requester.
+        (resource.data.guestId == null && request.resource.data.guestId == request.auth.uid) ||
+        
+        // Case B: Host or Guest is updating the room (making a move, leaving, updating disconnect flags).
+        (resource.data.hostId == request.auth.uid || resource.data.guestId == request.auth.uid)
+      );
+      
+      // Rooms shouldn't be deleted, just closed/ended via state updates.
+      allow delete: if false;
+    }
+    
+    // 3. Matches (Match History) collection - Immutable once written
+    match /matches/{matchId} {
+      allow read: if isAuthenticated();
+      // Allow creation only if the creating user is one of the players in the match
+      allow create: if isAuthenticated() && (
+        request.resource.data.players.red.uid == request.auth.uid ||
+        request.resource.data.players.blue.uid == request.auth.uid
+      );
+      // Matches cannot be modified or deleted once saved
+      allow update, delete: if false;
+    }
+  }
+}
