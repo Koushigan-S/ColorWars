@@ -45,15 +45,13 @@ export const RoomPage: React.FC = () => {
   // Game over results modal display delay state
   const [showResults, setShowResults] = useState(false);
 
-  // Sync in-game online status
+  // Sync in-game online status — set as soon as user enters the room
   useEffect(() => {
-    if (activeRoom?.gameStatus === 'playing') {
-      updateProfileStatus('in-game');
-    }
+    updateProfileStatus('in-game');
     return () => {
       updateProfileStatus('online');
     };
-  }, [activeRoom?.gameStatus]);
+  }, []);
 
   useEffect(() => {
     if (activeRoom?.gameStatus === 'ended') {

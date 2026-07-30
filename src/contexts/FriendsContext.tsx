@@ -30,7 +30,7 @@ interface FriendsContextType {
   respondToInvite: (inviteId: string, accept: boolean) => Promise<void>;
   
   // Friend management actions
-  searchUserByUsername: (username: string) => Promise<UserProfile | null>;
+  searchUserByUsername: (username: string) => Promise<UserProfile[]>;
   sendFriendRequestByUsername: (username: string) => Promise<{ success: boolean; message: string }>;
   acceptFriendRequest: (senderUid: string) => Promise<void>;
   declineFriendRequest: (senderUid: string) => Promise<void>;
@@ -353,27 +353,35 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  // Search user by Google Username
-  const searchUserByUsername = async (username: string): Promise<UserProfile | null> => {
-    if (!username.trim()) return null;
-    const cleanInput = username.trim();
+  // Search users by Google Username — partial/substring match, returns multiple results
+  const searchUserByUsername = async (username: string): Promise<UserProfile[]> => {
+    if (!username.trim() || !user) return [];
+    const cleanInput = username.trim().toLowerCase();
     try {
-      const q = query(collection(db, 'users'), where('displayName', '==', cleanInput));
-      const snap = await getDocs(q);
-      if (!snap.empty) {
-        return snap.docs[0].data() as UserProfile;
-      }
-
-      // Case-insensitive fallback search
+      // Firestore doesn't support substring queries natively,
+      // so fetch all users and filter client-side for partial matching
       const allSnap = await getDocs(collection(db, 'users'));
-      const found = allSnap.docs.find((d) => {
+      const results: UserProfile[] = [];
+
+      allSnap.forEach((d) => {
         const u = d.data() as UserProfile;
-        return u.displayName.toLowerCase() === cleanInput.toLowerCase();
+        if (u.uid === user.uid) return; // exclude self
+        if (u.displayName.toLowerCase().includes(cleanInput)) {
+          results.push(u);
+        }
       });
-      return found ? (found.data() as UserProfile) : null;
+
+      // Sort: prefix matches first, then substring matches
+      results.sort((a, b) => {
+        const aStartsWith = a.displayName.toLowerCase().startsWith(cleanInput) ? 0 : 1;
+        const bStartsWith = b.displayName.toLowerCase().startsWith(cleanInput) ? 0 : 1;
+        return aStartsWith - bStartsWith;
+      });
+
+      return results.slice(0, 10); // cap at 10 results
     } catch (e) {
       console.error(e);
-      return null;
+      return [];
     }
   };
 

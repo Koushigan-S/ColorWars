@@ -37,7 +37,7 @@ export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({ isOpen, onClose })
 
   const [friendsSubTab, setFriendsSubTab] = useState<'all' | 'requests'>('all');
   const [searchInput, setSearchInput] = useState('');
-  const [searchedUser, setSearchedUser] = useState<UserProfile | null>(null);
+  const [searchResults, setSearchResults] = useState<UserProfile[]>([]);
   const [searching, setSearching] = useState(false);
   const [addFeedback, setAddFeedback] = useState<{ success: boolean; message: string } | null>(null);
   const [adding, setAdding] = useState(false);
@@ -45,15 +45,15 @@ export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({ isOpen, onClose })
   // Live search effect as user types in the search bar
   useEffect(() => {
     if (!searchInput.trim()) {
-      setSearchedUser(null);
+      setSearchResults([]);
       setAddFeedback(null);
       return;
     }
 
     const timer = setTimeout(async () => {
       setSearching(true);
-      const found = await searchUserByUsername(searchInput.trim());
-      setSearchedUser(found);
+      const results = await searchUserByUsername(searchInput.trim());
+      setSearchResults(results);
       setSearching(false);
     }, 300);
 
@@ -133,83 +133,84 @@ export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({ isOpen, onClose })
                   <Search className="w-4 h-4 text-slate-500 absolute left-3 pointer-events-none" />
                 </div>
 
-                {/* SEARCH RESULT PROFILE CARD (Shown below search bar) */}
+                {/* SEARCH RESULT PROFILE CARDS (Shown below search bar) */}
                 {searching && (
                   <div className="p-3 rounded-2xl bg-black/20 border border-white/5 text-center text-xs text-slate-400">
                     Searching players...
                   </div>
                 )}
 
-                {!searching && searchInput.trim() && !searchedUser && (
+                {!searching && searchInput.trim() && searchResults.length === 0 && (
                   <div className="p-3 rounded-2xl bg-black/20 border border-white/5 text-center text-xs text-slate-400">
-                    No player found with Google name "{searchInput.trim()}"
+                    No player found matching "{searchInput.trim()}"
                   </div>
                 )}
 
-                {!searching && searchedUser && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="p-3.5 rounded-2xl bg-gradient-to-r from-indigo-950/40 to-slate-900/60 border border-indigo-500/30 flex items-center justify-between gap-3 shadow-md"
-                  >
-                    <div className="flex items-center gap-3 truncate">
-                      <div className="relative">
-                        <img
-                          src={searchedUser.photoURL}
-                          alt={searchedUser.displayName}
-                          className="w-10 h-10 rounded-full border border-indigo-400/50 object-cover"
-                        />
-                        <span
-                          className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border border-slate-900 ${
-                            searchedUser.status === 'in-game'
-                              ? 'bg-amber-400 shadow-[0_0_6px_#f59e0b]'
-                              : searchedUser.status === 'online'
-                              ? 'bg-emerald-500 shadow-[0_0_6px_#10b981]'
-                              : 'bg-slate-500'
-                          }`}
-                        />
-                      </div>
+                {!searching && searchResults.length > 0 && (
+                  <div className="space-y-2 max-h-[200px] overflow-y-auto custom-scrollbar">
+                    {searchResults.map((foundUser) => (
+                      <motion.div
+                        key={foundUser.uid}
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="p-3 rounded-2xl bg-gradient-to-r from-indigo-950/40 to-slate-900/60 border border-indigo-500/30 flex items-center justify-between gap-3 shadow-md"
+                      >
+                        <div className="flex items-center gap-3 truncate">
+                          <div className="relative">
+                            <img
+                              src={foundUser.photoURL}
+                              alt={foundUser.displayName}
+                              className="w-9 h-9 rounded-full border border-indigo-400/50 object-cover"
+                            />
+                            <span
+                              className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border border-slate-900 ${
+                                foundUser.status === 'in-game'
+                                  ? 'bg-amber-400 shadow-[0_0_6px_#f59e0b]'
+                                  : foundUser.status === 'online'
+                                  ? 'bg-emerald-500 shadow-[0_0_6px_#10b981]'
+                                  : 'bg-slate-500'
+                              }`}
+                            />
+                          </div>
 
-                      <div className="truncate">
-                        <span className="block text-xs font-bold text-white truncate">
-                          {searchedUser.displayName}
-                        </span>
-                        {searchedUser.status === 'in-game' ? (
-                          <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1">
-                            <Swords className="w-3 h-3" /> In Game
-                          </span>
-                        ) : searchedUser.status === 'online' ? (
-                          <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">
-                            ● Online
+                          <div className="truncate">
+                            <span className="block text-xs font-bold text-white truncate">
+                              {foundUser.displayName}
+                            </span>
+                            {foundUser.status === 'in-game' ? (
+                              <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1">
+                                <Swords className="w-3 h-3" /> In Game
+                              </span>
+                            ) : foundUser.status === 'online' ? (
+                              <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">
+                                ● Online
+                              </span>
+                            ) : (
+                              <span className="text-[10px] text-slate-400 font-semibold">
+                                Offline
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* ADD OPTION NEXT TO SEARCHED PROFILE */}
+                        {profile?.friends?.includes(foundUser.uid) ? (
+                          <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider px-2 py-1 bg-emerald-500/10 rounded-lg border border-emerald-500/20 flex-shrink-0">
+                            Friends
                           </span>
                         ) : (
-                          <span className="text-[10px] text-slate-400 font-semibold">
-                            Offline ({formatRelativeTime(searchedUser.lastSeen)})
-                          </span>
+                          <button
+                            onClick={() => handleAddFriend(foundUser.displayName)}
+                            disabled={adding}
+                            className="py-1.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-[10px] uppercase tracking-wider transition-all disabled:opacity-50 cursor-pointer shadow-md flex items-center gap-1 active:scale-95 flex-shrink-0"
+                          >
+                            <UserPlus className="w-3.5 h-3.5" />
+                            <span>{adding ? '...' : 'Add'}</span>
+                          </button>
                         )}
-                      </div>
-                    </div>
-
-                    {/* ADD OPTION NEXT TO SEARCHED PROFILE */}
-                    {searchedUser.uid === user?.uid ? (
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 py-1 bg-white/5 rounded-lg">
-                        You
-                      </span>
-                    ) : profile?.friends?.includes(searchedUser.uid) ? (
-                      <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider px-2 py-1 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
-                        Friends
-                      </span>
-                    ) : (
-                      <button
-                        onClick={() => handleAddFriend(searchedUser.displayName)}
-                        disabled={adding}
-                        className="py-1.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-[10px] uppercase tracking-wider transition-all disabled:opacity-50 cursor-pointer shadow-md flex items-center gap-1 active:scale-95 flex-shrink-0"
-                      >
-                        <UserPlus className="w-3.5 h-3.5" />
-                        <span>{adding ? '...' : 'Add Friend'}</span>
-                      </button>
-                    )}
-                  </motion.div>
+                      </motion.div>
+                    ))}
+                  </div>
                 )}
 
                 {addFeedback && (
