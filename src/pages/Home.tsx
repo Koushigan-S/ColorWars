@@ -3,8 +3,7 @@ import { useGame } from '../contexts/GameContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Swords, Plus, ArrowRight, X, HelpCircle } from 'lucide-react';
-import HowToPlayModal from '../components/HowToPlayModal';
+import { Swords, Plus, ArrowRight, X, HelpCircle, Zap, Target, Award } from 'lucide-react';
 
 export const Home: React.FC = () => {
   const { createRoom, joinRoom } = useGame();
@@ -13,6 +12,7 @@ export const Home: React.FC = () => {
 
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
   const [isHowToPlayOpen, setIsHowToPlayOpen] = useState(false);
+
   const [roomCode, setRoomCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +60,7 @@ export const Home: React.FC = () => {
             <img
               src={profile.photoURL}
               alt={profile.displayName}
-              className="w-8 h-8 rounded-full border border-white/20 group-hover:border-white/50"
+              className="w-8 h-8 rounded-full border border-white/20 group-hover:border-white/50 object-cover"
             />
             <span className="text-sm font-semibold text-gray-200 group-hover:text-white hidden sm:inline">
               Profile
@@ -77,7 +77,7 @@ export const Home: React.FC = () => {
       )}
 
       {/* Minimal Logo */}
-      <div className="mb-12 text-center pointer-events-none flex flex-col items-center">
+      <div className="mb-10 text-center pointer-events-none flex flex-col items-center">
         <img src="/favicon.png" alt="ColorWars Logo" className="w-20 h-20 mb-4 object-contain shadow-lg" />
         <h1 className="font-display text-4xl font-black text-white tracking-tight uppercase leading-none">
           WAR <span className="text-game-red">ZONE</span>
@@ -136,22 +136,23 @@ export const Home: React.FC = () => {
           <ArrowRight className="w-5 h-5 text-gray-600 group-hover:text-game-blue group-hover:translate-x-1 transition-all" />
         </motion.button>
 
-        {/* How to Play Button (Below Join Room Button) */}
+        {/* How to play?! Button (Placed directly below Join Room) */}
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={() => setIsHowToPlayOpen(true)}
-          className="relative glass-panel group p-5 rounded-2xl flex items-center justify-between transition-all border border-white/10 hover:border-amber-500/40 hover:shadow-[0_0_30px_rgba(245,158,11,0.15)] cursor-pointer"
+          disabled={loading}
+          className="relative glass-panel group p-6 rounded-2xl flex items-center justify-between transition-all border border-white/10 hover:border-amber-400/40 hover:shadow-[0_0_30px_rgba(251,191,36,0.15)] cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
         >
           <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 group-hover:scale-110 transition-transform">
+            <div className="p-3 rounded-xl bg-amber-400/10 border border-amber-400/30 text-amber-400 group-hover:scale-110 transition-transform">
               <HelpCircle className="w-6 h-6" />
             </div>
             <div className="text-left">
               <h2 className="font-display text-lg font-bold text-white group-hover:text-amber-400 transition-colors">
                 How to play?!
               </h2>
-              <p className="text-xs text-gray-400">Rules & Chain Reaction guide</p>
+              <p className="text-xs text-gray-400">Rules, explosions & chain reactions</p>
             </div>
           </div>
           <ArrowRight className="w-5 h-5 text-gray-600 group-hover:text-amber-400 group-hover:translate-x-1 transition-all" />
@@ -168,9 +169,6 @@ export const Home: React.FC = () => {
         </motion.div>
       )}
 
-      {/* How to Play Modal */}
-      <HowToPlayModal isOpen={isHowToPlayOpen} onClose={() => setIsHowToPlayOpen(false)} />
-
       {/* Join Room Modal */}
       <AnimatePresence>
         {isJoinModalOpen && (
@@ -183,7 +181,7 @@ export const Home: React.FC = () => {
               onClick={() => {
                 if (!loading) setIsJoinModalOpen(false);
               }}
-              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm cursor-pointer"
             ></motion.div>
 
             {/* Modal Body */}
@@ -192,7 +190,7 @@ export const Home: React.FC = () => {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 15 }}
               transition={{ type: 'spring', damping: 25, stiffness: 350 }}
-              className="glass-panel-heavy w-full max-w-sm p-6 rounded-3xl relative overflow-hidden border border-white/10 shadow-2xl"
+              className="glass-panel-heavy w-full max-w-sm p-6 rounded-3xl relative overflow-hidden border border-white/10 shadow-2xl z-10"
             >
               <div className="flex justify-between items-center mb-6">
                 <h3 className="font-display text-lg font-bold text-white uppercase tracking-wider">
@@ -240,6 +238,117 @@ export const Home: React.FC = () => {
                   )}
                 </button>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* HOW TO PLAY MODAL TAB */}
+      <AnimatePresence>
+        {isHowToPlayOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsHowToPlayOpen(false)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm cursor-pointer"
+            />
+
+            {/* Modal Window */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+              className="w-full max-w-md rounded-3xl bg-[#0d1527] border border-white/10 shadow-2xl relative overflow-hidden flex flex-col z-10"
+            >
+              {/* Header */}
+              <div className="p-5 border-b border-white/10 flex items-center justify-between bg-slate-900/80">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-2xl bg-amber-400/10 text-amber-400 border border-amber-400/20">
+                    <HelpCircle className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-display font-black text-lg text-white tracking-wide uppercase">
+                      How to Play
+                    </h3>
+                    <p className="text-xs text-slate-400">Rules & Strategy Guide</p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setIsHowToPlayOpen(false)}
+                  className="p-2 rounded-full hover:bg-white/10 text-gray-400 hover:text-white transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Guide Content Body */}
+              <div className="p-5 space-y-4 text-xs text-slate-300 overflow-y-auto max-h-[70vh] custom-scrollbar">
+                {/* 1. Placement */}
+                <div className="p-3.5 rounded-2xl bg-white/5 border border-white/5 space-y-1">
+                  <h4 className="font-bold text-white text-sm flex items-center gap-2">
+                    <Target className="w-4 h-4 text-game-red" /> 1. Turn-Based Placement
+                  </h4>
+                  <p className="text-slate-300 leading-relaxed">
+                    Take turns placing energy orbs on a 5x5 board. Tap any empty cell to claim it, or tap your own cell to stack orbs.
+                  </p>
+                </div>
+
+                {/* 2. Critical Mass */}
+                <div className="p-3.5 rounded-2xl bg-white/5 border border-white/5 space-y-2">
+                  <h4 className="font-bold text-white text-sm flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-amber-400" /> 2. Critical Mass Rules
+                  </h4>
+                  <div className="grid grid-cols-3 gap-2 text-center pt-1">
+                    <div className="p-2.5 rounded-xl bg-black/40 border border-white/10">
+                      <span className="text-amber-400 font-mono font-black text-lg block">2 Orbs</span>
+                      <span className="text-[10px] text-slate-400 uppercase font-bold">Corners</span>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-black/40 border border-white/10">
+                      <span className="text-amber-400 font-mono font-black text-lg block">3 Orbs</span>
+                      <span className="text-[10px] text-slate-400 uppercase font-bold">Edges</span>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-black/40 border border-white/10">
+                      <span className="text-amber-400 font-mono font-black text-lg block">4 Orbs</span>
+                      <span className="text-[10px] text-slate-400 uppercase font-bold">Center</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Explosions */}
+                <div className="p-3.5 rounded-2xl bg-white/5 border border-white/5 space-y-1">
+                  <h4 className="font-bold text-white text-sm flex items-center gap-2">
+                    💥 3. Explosions & Chain Reactions
+                  </h4>
+                  <p className="text-slate-300 leading-relaxed">
+                    Reaching critical mass causes an explosion! Orbs split into adjacent neighboring cells, converting opponent orbs to your color and triggering chain reactions.
+                  </p>
+                </div>
+
+                {/* 4. Victory */}
+                <div className="p-3.5 rounded-2xl bg-white/5 border border-white/5 space-y-1">
+                  <h4 className="font-bold text-white text-sm flex items-center gap-2">
+                    <Award className="w-4 h-4 text-game-blue" /> 4. Winning the Match
+                  </h4>
+                  <p className="text-slate-300 leading-relaxed">
+                    Eliminate all of your opponent's cells from the board to claim ultimate victory!
+                  </p>
+                </div>
+              </div>
+
+              {/* Footer Button */}
+              <div className="p-4 border-t border-white/10 bg-slate-900/90 text-center">
+                <button
+                  onClick={() => setIsHowToPlayOpen(false)}
+                  className="w-full py-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase tracking-wider transition-all cursor-pointer shadow-md active:scale-95"
+                >
+                  Got It!
+                </button>
+              </div>
             </motion.div>
           </div>
         )}
