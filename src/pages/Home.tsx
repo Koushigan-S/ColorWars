@@ -3,7 +3,8 @@ import { useGame } from '../contexts/GameContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Swords, Plus, ArrowRight, X } from 'lucide-react';
+import { Swords, Plus, ArrowRight, X, HelpCircle } from 'lucide-react';
+import HowToPlayModal from '../components/HowToPlayModal';
 
 export const Home: React.FC = () => {
   const { createRoom, joinRoom } = useGame();
@@ -11,6 +12,7 @@ export const Home: React.FC = () => {
   const navigate = useNavigate();
 
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
+  const [isHowToPlayOpen, setIsHowToPlayOpen] = useState(false);
   const [roomCode, setRoomCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +50,7 @@ export const Home: React.FC = () => {
       {/* Background glow meshes */}
       <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[500px] h-[500px] rounded-full bg-indigo-500/5 blur-[120px] pointer-events-none"></div>
 
-      {/* Floating profile link in the top corner (Chess.com profile access) */}
+      {/* Floating profile link in the top corner */}
       {profile && (
         <div className="absolute top-6 right-6 flex items-center gap-4 z-40">
           <button
@@ -85,7 +87,7 @@ export const Home: React.FC = () => {
         </p>
       </div>
 
-      {/* Central Action Buttons - Minimalist */}
+      {/* Central Action Buttons */}
       <div className="w-full max-w-sm flex flex-col gap-4 z-10">
         {/* Create Room Button */}
         <motion.button
@@ -133,6 +135,27 @@ export const Home: React.FC = () => {
           </div>
           <ArrowRight className="w-5 h-5 text-gray-600 group-hover:text-game-blue group-hover:translate-x-1 transition-all" />
         </motion.button>
+
+        {/* How to Play Button (Below Join Room Button) */}
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => setIsHowToPlayOpen(true)}
+          className="relative glass-panel group p-5 rounded-2xl flex items-center justify-between transition-all border border-white/10 hover:border-amber-500/40 hover:shadow-[0_0_30px_rgba(245,158,11,0.15)] cursor-pointer"
+        >
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 group-hover:scale-110 transition-transform">
+              <HelpCircle className="w-6 h-6" />
+            </div>
+            <div className="text-left">
+              <h2 className="font-display text-lg font-bold text-white group-hover:text-amber-400 transition-colors">
+                How to play?!
+              </h2>
+              <p className="text-xs text-gray-400">Rules & Chain Reaction guide</p>
+            </div>
+          </div>
+          <ArrowRight className="w-5 h-5 text-gray-600 group-hover:text-amber-400 group-hover:translate-x-1 transition-all" />
+        </motion.button>
       </div>
 
       {error && (
@@ -144,6 +167,9 @@ export const Home: React.FC = () => {
           {error}
         </motion.div>
       )}
+
+      {/* How to Play Modal */}
+      <HowToPlayModal isOpen={isHowToPlayOpen} onClose={() => setIsHowToPlayOpen(false)} />
 
       {/* Join Room Modal */}
       <AnimatePresence>
