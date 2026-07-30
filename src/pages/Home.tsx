@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { useGame } from '../contexts/GameContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useDrawer } from '../contexts/DrawerContext';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Swords, Plus, ArrowRight, X, HelpCircle, Zap, Target, Award } from 'lucide-react';
+import { Swords, Plus, ArrowRight, X, HelpCircle, Zap, Target, Award, Users } from 'lucide-react';
 
 export const Home: React.FC = () => {
   const { createRoom, joinRoom } = useGame();
   const { profile, signOut } = useAuth();
+  const { openDrawer } = useDrawer();
   const navigate = useNavigate();
 
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
@@ -156,6 +158,27 @@ export const Home: React.FC = () => {
             </div>
           </div>
           <ArrowRight className="w-5 h-5 text-gray-600 group-hover:text-amber-400 group-hover:translate-x-1 transition-all" />
+        </motion.button>
+
+        {/* Friends Button */}
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={openDrawer}
+          className="relative glass-panel group p-6 rounded-2xl flex items-center justify-between transition-all border border-white/10 hover:border-indigo-400/40 hover:shadow-[0_0_30px_rgba(129,140,248,0.15)] cursor-pointer"
+        >
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 group-hover:scale-110 transition-transform">
+              <Users className="w-6 h-6" />
+            </div>
+            <div className="text-left">
+              <h2 className="font-display text-lg font-bold text-white group-hover:text-indigo-400 transition-colors">
+                Friends
+              </h2>
+              <p className="text-xs text-gray-400">Search, invite & chat with players</p>
+            </div>
+          </div>
+          <ArrowRight className="w-5 h-5 text-gray-600 group-hover:text-indigo-400 group-hover:translate-x-1 transition-all" />
         </motion.button>
       </div>
 

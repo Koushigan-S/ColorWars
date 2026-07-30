@@ -3,7 +3,7 @@ import { signInWithPopup, signOut as fbSignOut, onAuthStateChanged } from 'fireb
 import type { User } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { auth, db, googleProvider } from '../services/firebase';
-import type { UserProfile } from '../types';
+import type { UserProfile, OnlineStatus } from '../types';
 
 interface AuthContextType {
   user: User | null;
@@ -11,7 +11,8 @@ interface AuthContextType {
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
-  updateProfileStatus: (status: 'online' | 'offline' | 'in-game') => Promise<void>;
+  updateProfileStatus: (status: OnlineStatus) => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -28,7 +29,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const userDocSnap = await getDoc(userDocRef);
 
       if (!userDocSnap.exists()) {
-        // First-time sign-in: Create profile
+        // First-time sign-in: Create profile using Google displayName
         const newProfile: UserProfile = {
           uid: firebaseUser.uid,
           displayName: firebaseUser.displayName || 'Anonymous Player',
@@ -37,6 +38,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           dateJoined: new Date().toISOString(),
           lastSeen: new Date().toISOString(),
           status: 'online',
+          friends: [],
+          friendRequests: [],
           stats: {
             gamesPlayed: 0,
             wins: 0,
@@ -52,25 +55,58 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await setDoc(userDocRef, newProfile);
         setProfile(newProfile);
       } else {
-        // Subsequent sign-in: Update status & lastSeen
+        // Subsequent sign-in: Update Google displayName, photoURL, lastSeen & status
         const existingData = userDocSnap.data() as UserProfile;
-        const updatedProfile = {
+        const friends = existingData.friends || [];
+        const friendRequests = existingData.friendRequests || [];
+
+        const updatedProfile: UserProfile = {
           ...existingData,
           displayName: firebaseUser.displayName || existingData.displayName,
           photoURL: firebaseUser.photoURL || existingData.photoURL,
           lastSeen: new Date().toISOString(),
-          status: 'online' as const,
+          status: 'online',
+          friends,
+          friendRequests,
         };
+
         await updateDoc(userDocRef, {
           displayName: updatedProfile.displayName,
           photoURL: updatedProfile.photoURL,
           lastSeen: updatedProfile.lastSeen,
           status: 'online',
+          friends,
+          friendRequests,
         });
+
         setProfile(updatedProfile);
       }
     } catch (error) {
       console.error('Error fetching/creating user profile:', error);
+    }
+  };
+
+  const refreshProfile = async () => {
+    if (user) {
+      const userDocRef = doc(db, 'users', user.uid);
+      const snap = await getDoc(userDocRef);
+      if (snap.exists()) {
+        setProfile(snap.data() as UserProfile);
+      }
+    }
+  };
+
+  const updateProfileStatus = async (status: OnlineStatus) => {
+    if (!user) return;
+    const userDocRef = doc(db, 'users', user.uid);
+    try {
+      await updateDoc(userDocRef, {
+        status,
+        lastSeen: new Date().toISOString(),
+      });
+      setProfile((prev) => (prev ? { ...prev, status } : null));
+    } catch (error) {
+      console.error('Failed to update status:', error);
     }
   };
 
@@ -88,6 +124,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return unsubscribe;
   }, []);
 
+  // Window unload listener to mark offline status when user leaves web app
+  useEffect(() => {
+    if (!user) return;
+
+    const handleBeforeUnload = () => {
+      const userDocRef = doc(db, 'users', user.uid);
+      updateDoc(userDocRef, {
+        status: 'offline',
+        lastSeen: new Date().toISOString(),
+      });
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [user]);
+
   const signInWithGoogle = async () => {
     setLoading(true);
     try {
@@ -103,7 +157,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(true);
     try {
       if (user) {
-        // Set status to offline before signing out
         const userDocRef = doc(db, 'users', user.uid);
         await updateDoc(userDocRef, {
           status: 'offline',
@@ -120,17 +173,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const updateProfileStatus = async (status: 'online' | 'offline' | 'in-game') => {
-    if (!user) return;
-    const userDocRef = doc(db, 'users', user.uid);
-    try {
-      await updateDoc(userDocRef, { status });
-      setProfile((prev) => (prev ? { ...prev, status } : null));
-    } catch (error) {
-      console.error('Failed to update status:', error);
-    }
-  };
-
   return (
     <AuthContext.Provider
       value={{
@@ -140,6 +182,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         signInWithGoogle,
         signOut,
         updateProfileStatus,
+        refreshProfile,
       }}
     >
       {children}

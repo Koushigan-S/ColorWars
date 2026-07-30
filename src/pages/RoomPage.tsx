@@ -21,7 +21,7 @@ interface FlyingDot {
 export const RoomPage: React.FC = () => {
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
-  const { profile } = useAuth();
+  const { profile, updateProfileStatus } = useAuth();
   const {
     activeRoom,
     loadingRoom,
@@ -44,6 +44,16 @@ export const RoomPage: React.FC = () => {
   const [flyingDots, setFlyingDots] = useState<FlyingDot[]>([]);
   // Game over results modal display delay state
   const [showResults, setShowResults] = useState(false);
+
+  // Sync in-game online status
+  useEffect(() => {
+    if (activeRoom?.gameStatus === 'playing') {
+      updateProfileStatus('in-game');
+    }
+    return () => {
+      updateProfileStatus('online');
+    };
+  }, [activeRoom?.gameStatus]);
 
   useEffect(() => {
     if (activeRoom?.gameStatus === 'ended') {

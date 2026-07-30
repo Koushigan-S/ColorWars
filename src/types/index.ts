@@ -20,7 +20,30 @@ export interface UserProfile {
   dateJoined: string;
   lastSeen: string;
   status: OnlineStatus;
+  friends: string[]; // Array of friend UIDs
+  friendRequests: string[]; // Array of UIDs who sent requests
   stats: UserStats;
+}
+
+export interface GameInvite {
+  id: string;
+  senderId: string;
+  senderName: string;
+  senderPhoto: string;
+  receiverId: string;
+  roomCode: string;
+  status: 'pending' | 'accepted' | 'rejected';
+  createdAt: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  chatId: string;
+  senderId: string;
+  senderName: string;
+  receiverId: string;
+  text: string;
+  timestamp: string;
 }
 
 export type PlayerColor = 'red' | 'blue';
