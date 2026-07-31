@@ -147,6 +147,13 @@ export const Profile: React.FC = () => {
             />
 
             <h2 className="font-display text-2xl font-black text-white leading-tight truncate">{profileData.displayName}</h2>
+            {profileData.playerId && (
+              <div className="mt-1 flex items-center justify-center">
+                <span className="text-xs font-mono font-bold text-indigo-300 uppercase tracking-widest bg-indigo-500/15 border border-indigo-500/30 px-2.5 py-0.5 rounded-lg shadow-sm">
+                  ID: #{profileData.playerId}
+                </span>
+              </div>
+            )}
             <div className="flex justify-center mt-2.5 mb-6">{getStatusBadge(profileData.status)}</div>
 
             {/* General timestamps */}

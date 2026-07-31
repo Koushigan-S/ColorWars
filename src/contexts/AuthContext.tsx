@@ -4,6 +4,7 @@ import type { User } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { auth, db, googleProvider } from '../services/firebase';
 import type { UserProfile, OnlineStatus } from '../types';
+import { generatePlayerId } from '../utils/friendCode';
 
 interface AuthContextType {
   user: User | null;
@@ -29,9 +30,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const userDocSnap = await getDoc(userDocRef);
 
       if (!userDocSnap.exists()) {
-        // First-time sign-in: Create profile using Google displayName
+        // First-time sign-in: Create profile using Google displayName & generate permanent 10-char playerId
+        const newPlayerId = generatePlayerId();
         const newProfile: UserProfile = {
           uid: firebaseUser.uid,
+          playerId: newPlayerId,
           displayName: firebaseUser.displayName || 'Anonymous Player',
           email: firebaseUser.email || '',
           photoURL: firebaseUser.photoURL || `https://api.dicebear.com/7.x/identicon/svg?seed=${firebaseUser.uid}`,
@@ -55,13 +58,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await setDoc(userDocRef, newProfile);
         setProfile(newProfile);
       } else {
-        // Subsequent sign-in: Update Google displayName, photoURL, lastSeen & status
+        // Subsequent sign-in: Preserve existing playerId (or generate once if missing)
         const existingData = userDocSnap.data() as UserProfile;
         const friends = existingData.friends || [];
         const friendRequests = existingData.friendRequests || [];
+        const playerId = existingData.playerId || generatePlayerId();
 
         const updatedProfile: UserProfile = {
           ...existingData,
+          playerId,
           displayName: firebaseUser.displayName || existingData.displayName,
           photoURL: firebaseUser.photoURL || existingData.photoURL,
           lastSeen: new Date().toISOString(),
@@ -71,6 +76,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
 
         await updateDoc(userDocRef, {
+          playerId,
           displayName: updatedProfile.displayName,
           photoURL: updatedProfile.photoURL,
           lastSeen: updatedProfile.lastSeen,

@@ -14,6 +14,7 @@ export interface UserStats {
 
 export interface UserProfile {
   uid: string;
+  playerId?: string; // Unique 10-character alphanumeric ID (e.g. CW7K9P2X4M)
   displayName: string;
   email: string;
   photoURL: string;

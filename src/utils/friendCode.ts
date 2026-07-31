@@ -43,3 +43,16 @@ export const getEffectiveStatus = (
 
   return userProfile.status === 'in-game' ? 'in-game' : 'online';
 };
+
+/**
+ * Generates a unique 10-character uppercase alphanumeric Player ID (e.g. "CW7K9P2X4M").
+ * Never changes once assigned to a user profile.
+ */
+export const generatePlayerId = (): string => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Exclude ambiguous chars (0, O, 1, I)
+  let code = 'CW';
+  for (let i = 0; i < 8; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+};

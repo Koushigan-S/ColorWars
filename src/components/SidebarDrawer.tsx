@@ -127,7 +127,7 @@ export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({ isOpen, onClose })
                     id="friend-search-input"
                     name="friendSearch"
                     type="text"
-                    placeholder="Search Google Account Name (e.g. Arjun)"
+                    placeholder="Search Name or ID (e.g. Arjun / CW7K9P2X4M)"
                     value={searchInput}
                     onChange={(e) => setSearchInput(e.target.value)}
                     className="w-full bg-black/40 border border-white/10 rounded-2xl pl-9 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
@@ -181,9 +181,16 @@ export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({ isOpen, onClose })
                             </div>
 
                             <div className="truncate">
-                              <span className="block text-xs font-bold text-white truncate">
-                                {searchedUser.displayName}
-                              </span>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-xs font-bold text-white truncate">
+                                  {searchedUser.displayName}
+                                </span>
+                                {searchedUser.playerId && (
+                                  <span className="text-[9px] font-mono font-bold text-indigo-300 bg-indigo-500/20 px-1.5 py-0.5 rounded border border-indigo-500/30">
+                                    #{searchedUser.playerId}
+                                  </span>
+                                )}
+                              </div>
                               {isInGame ? (
                                 <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1">
                                   <Swords className="w-3 h-3" /> In Game
@@ -354,9 +361,16 @@ export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({ isOpen, onClose })
                             </div>
 
                             <div className="truncate">
-                              <span className="block text-xs font-bold text-white truncate">
-                                {friend.displayName}
-                              </span>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-xs font-bold text-white truncate">
+                                  {friend.displayName}
+                                </span>
+                                {friend.playerId && (
+                                  <span className="text-[9px] font-mono font-bold text-indigo-300 bg-indigo-500/20 px-1.5 py-0.5 rounded border border-indigo-500/30">
+                                    #{friend.playerId}
+                                  </span>
+                                )}
+                              </div>
                               
                               {isInGame ? (
                                 <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1">

@@ -367,19 +367,31 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const u = docSnap.data() as UserProfile;
         if (!u || (user && u.uid === user.uid)) return;
 
-        if (u.displayName && u.displayName.toLowerCase().includes(cleanInput)) {
+        const nameMatch = u.displayName && u.displayName.toLowerCase().includes(cleanInput);
+        const idMatch = u.playerId && u.playerId.toLowerCase().includes(cleanInput);
+
+        if (nameMatch || idMatch) {
           matches.push(u);
         }
       });
 
       // Sort exact & prefix matches first
       matches.sort((a, b) => {
-        const nameA = a.displayName.toLowerCase();
-        const nameB = b.displayName.toLowerCase();
-        const aStart = nameA.startsWith(cleanInput);
-        const bStart = nameB.startsWith(cleanInput);
+        const nameA = (a.displayName || '').toLowerCase();
+        const idA = (a.playerId || '').toLowerCase();
+        const nameB = (b.displayName || '').toLowerCase();
+        const idB = (b.playerId || '').toLowerCase();
+
+        const aExact = nameA === cleanInput || idA === cleanInput;
+        const bExact = nameB === cleanInput || idB === cleanInput;
+        if (aExact && !bExact) return -1;
+        if (!aExact && bExact) return 1;
+
+        const aStart = nameA.startsWith(cleanInput) || idA.startsWith(cleanInput);
+        const bStart = nameB.startsWith(cleanInput) || idB.startsWith(cleanInput);
         if (aStart && !bStart) return -1;
         if (!aStart && bStart) return 1;
+
         return nameA.localeCompare(nameB);
       });
 

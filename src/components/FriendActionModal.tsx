@@ -104,6 +104,13 @@ export const FriendActionModal: React.FC = () => {
             {selectedFriend.displayName}
           </h2>
 
+          {/* Unique 10-char Player ID */}
+          {selectedFriend.playerId && (
+            <span className="text-[11px] font-mono font-bold text-indigo-300 uppercase tracking-widest bg-indigo-500/15 border border-indigo-500/30 px-2 py-0.5 rounded-md mt-1">
+              #{selectedFriend.playerId}
+            </span>
+          )}
+
           {/* Status Badge */}
           <div className="mt-1 flex items-center gap-1.5 justify-center">
             {isInGame ? (
