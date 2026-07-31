@@ -13,6 +13,7 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated();
       allow update: if isAuthenticated();
+      allow delete: if isAuthenticated();
     }
     
     // 2. Rooms collection
@@ -25,9 +26,7 @@ service cloud.firestore {
     
     // 3. Matches (Match History) collection
     match /matches/{matchId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated();
-      allow update, delete: if false;
+      allow read, write: if isAuthenticated();
     }
 
     // 4. Invites collection for live match invitations
