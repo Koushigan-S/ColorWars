@@ -3,12 +3,37 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import LoadingScreen from '../components/LoadingScreen';
 
-// Lazy load pages for optimized bundle size & fast LCP
-const Login = lazy(() => import('../pages/Login'));
-const Home = lazy(() => import('../pages/Home'));
-const RoomPage = lazy(() => import('../pages/RoomPage'));
-const Profile = lazy(() => import('../pages/Profile'));
-const NotFound = lazy(() => import('../pages/NotFound'));
+/**
+ * Helper to handle dynamic import chunk loading errors after new deployments.
+ * If a chunk fails to load because the hash changed on deploy, it reloads the page once to get the latest bundle.
+ */
+const lazyWithRetry = (componentImport: () => Promise<any>) =>
+  lazy(async () => {
+    const pageHasBeenRefreshed = JSON.parse(
+      window.sessionStorage.getItem('page-has-been-refreshed') || 'false'
+    );
+
+    try {
+      const component = await componentImport();
+      window.sessionStorage.setItem('page-has-been-refreshed', 'false');
+      return component;
+    } catch (error) {
+      console.warn('Chunk loading failed (likely due to new deployment), reloading page...', error);
+      if (!pageHasBeenRefreshed) {
+        window.sessionStorage.setItem('page-has-been-refreshed', 'true');
+        window.location.reload();
+        return new Promise(() => {});
+      }
+      throw error;
+    }
+  });
+
+// Lazy load pages with automatic deployment chunk retry
+const Login = lazyWithRetry(() => import('../pages/Login'));
+const Home = lazyWithRetry(() => import('../pages/Home'));
+const RoomPage = lazyWithRetry(() => import('../pages/RoomPage'));
+const Profile = lazyWithRetry(() => import('../pages/Profile'));
+const NotFound = lazyWithRetry(() => import('../pages/NotFound'));
 
 // Route guards
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
