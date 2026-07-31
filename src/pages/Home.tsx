@@ -234,6 +234,8 @@ export const Home: React.FC = () => {
                     Room Code
                   </label>
                   <input
+                    id="room-code-input"
+                    name="roomCode"
                     type="text"
                     maxLength={6}
                     placeholder="E.G. A4XF2P"

@@ -124,6 +124,8 @@ export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({ isOpen, onClose })
               <div className="flex flex-col gap-2">
                 <div className="relative flex items-center">
                   <input
+                    id="friend-search-input"
+                    name="friendSearch"
                     type="text"
                     placeholder="Search Google Account Name (e.g. Arjun)"
                     value={searchInput}

@@ -102,6 +102,8 @@ export const DirectChatModal: React.FC = () => {
           {/* Input Form */}
           <form onSubmit={handleSend} className="p-3 border-t border-white/10 bg-slate-900/90 flex items-center gap-2">
             <input
+              id="direct-chat-message-input"
+              name="chatMessage"
               type="text"
               placeholder={`Message ${activeChatFriend.displayName}...`}
               value={text}
