@@ -30,7 +30,8 @@ interface FriendsContextType {
   respondToInvite: (inviteId: string, accept: boolean) => Promise<void>;
   
   // Friend management actions
-  searchUserByUsername: (username: string) => Promise<UserProfile[]>;
+  searchUsersByQuery: (queryText: string) => Promise<UserProfile[]>;
+  searchUserByUsername: (username: string) => Promise<UserProfile | null>;
   sendFriendRequestByUsername: (username: string) => Promise<{ success: boolean; message: string }>;
   acceptFriendRequest: (senderUid: string) => Promise<void>;
   declineFriendRequest: (senderUid: string) => Promise<void>;
@@ -353,36 +354,46 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  // Search users by Google Username — partial/substring match, returns multiple results
-  const searchUserByUsername = async (username: string): Promise<UserProfile[]> => {
-    if (!username.trim() || !user) return [];
-    const cleanInput = username.trim().toLowerCase();
-    try {
-      // Firestore doesn't support substring queries natively,
-      // so fetch all users and filter client-side for partial matching
-      const allSnap = await getDocs(collection(db, 'users'));
-      const results: UserProfile[] = [];
+  // Real-time search users by query (prefix/substring matching as user types)
+  const searchUsersByQuery = async (queryText: string): Promise<UserProfile[]> => {
+    if (!queryText.trim()) return [];
+    const cleanInput = queryText.trim().toLowerCase();
 
-      allSnap.forEach((d) => {
-        const u = d.data() as UserProfile;
-        if (u.uid === user.uid) return; // exclude self
-        if (u.displayName.toLowerCase().includes(cleanInput)) {
-          results.push(u);
+    try {
+      const allUsersSnap = await getDocs(collection(db, 'users'));
+      const matches: UserProfile[] = [];
+
+      allUsersSnap.forEach((docSnap) => {
+        const u = docSnap.data() as UserProfile;
+        if (!u || (user && u.uid === user.uid)) return;
+
+        if (u.displayName && u.displayName.toLowerCase().includes(cleanInput)) {
+          matches.push(u);
         }
       });
 
-      // Sort: prefix matches first, then substring matches
-      results.sort((a, b) => {
-        const aStartsWith = a.displayName.toLowerCase().startsWith(cleanInput) ? 0 : 1;
-        const bStartsWith = b.displayName.toLowerCase().startsWith(cleanInput) ? 0 : 1;
-        return aStartsWith - bStartsWith;
+      // Sort exact & prefix matches first
+      matches.sort((a, b) => {
+        const nameA = a.displayName.toLowerCase();
+        const nameB = b.displayName.toLowerCase();
+        const aStart = nameA.startsWith(cleanInput);
+        const bStart = nameB.startsWith(cleanInput);
+        if (aStart && !bStart) return -1;
+        if (!aStart && bStart) return 1;
+        return nameA.localeCompare(nameB);
       });
 
-      return results.slice(0, 10); // cap at 10 results
+      return matches.slice(0, 10);
     } catch (e) {
-      console.error(e);
+      console.error('Failed to search users:', e);
       return [];
     }
+  };
+
+  // Search user by Google Username
+  const searchUserByUsername = async (username: string): Promise<UserProfile | null> => {
+    const matches = await searchUsersByQuery(username);
+    return matches.length > 0 ? matches[0] : null;
   };
 
   return (
@@ -397,6 +408,7 @@ export const FriendsProvider: React.FC<{ children: React.ReactNode }> = ({ child
         clearRejectedFeedback,
         sendGameInvite,
         respondToInvite,
+        searchUsersByQuery,
         searchUserByUsername,
         sendFriendRequestByUsername,
         acceptFriendRequest,

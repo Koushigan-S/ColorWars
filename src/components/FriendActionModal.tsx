@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useFriends } from '../contexts/FriendsContext';
 import { useGame } from '../contexts/GameContext';
 import { useNavigate } from 'react-router-dom';
-import { formatRelativeTime } from '../utils/friendCode';
+import { formatRelativeTime, getEffectiveStatus } from '../utils/friendCode';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Swords, MessageSquare, User, X, UserX } from 'lucide-react';
 
@@ -47,9 +47,10 @@ export const FriendActionModal: React.FC = () => {
     setSelectedFriend(null);
   };
 
-  // Online status flags
-  const isOnline = selectedFriend.status === 'online';
-  const isInGame = selectedFriend.status === 'in-game';
+  // Online status calculation using getEffectiveStatus
+  const effStatus = getEffectiveStatus(selectedFriend);
+  const isOnline = effStatus === 'online';
+  const isInGame = effStatus === 'in-game';
 
   return (
     <AnimatePresence>

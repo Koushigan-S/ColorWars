@@ -124,11 +124,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return unsubscribe;
   }, []);
 
-  // Window unload listener to mark offline status when user leaves web app
+  // Heartbeat interval (every 15s) to maintain active online/in-game presence
   useEffect(() => {
     if (!user) return;
 
-    const handleBeforeUnload = () => {
+    const sendHeartbeat = async () => {
+      const userDocRef = doc(db, 'users', user.uid);
+      try {
+        await updateDoc(userDocRef, {
+          lastSeen: new Date().toISOString(),
+        });
+      } catch (err) {
+        console.error('Heartbeat update failed:', err);
+      }
+    };
+
+    // Send initial heartbeat immediately
+    sendHeartbeat();
+
+    // Repeat every 15 seconds
+    const interval = setInterval(sendHeartbeat, 15000);
+
+    return () => clearInterval(interval);
+  }, [user]);
+
+  // Window unload and visibility change listeners to update presence when user leaves
+  useEffect(() => {
+    if (!user) return;
+
+    const setOffline = () => {
       const userDocRef = doc(db, 'users', user.uid);
       updateDoc(userDocRef, {
         status: 'offline',
@@ -136,9 +160,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
     };
 
+    const handleBeforeUnload = () => {
+      setOffline();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        setOffline();
+      } else if (document.visibilityState === 'visible') {
+        const userDocRef = doc(db, 'users', user.uid);
+        updateDoc(userDocRef, {
+          status: 'online',
+          lastSeen: new Date().toISOString(),
+        });
+      }
+    };
+
     window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [user]);
 
